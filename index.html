@@ -45,6 +45,7 @@ h1,h2,h3{margin:0;text-wrap:balance}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--link);outline-offset:2px}
+::placeholder{font-style:italic;color:var(--muted);opacity:.55}
 a{color:var(--link)}
 
 header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-top:24px}
@@ -177,6 +178,24 @@ img{max-width:100%}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 code{font-family:var(--mono);font-size:13px;background:var(--surface-2);padding:1px 5px;border-radius:4px}
+
+/* ---------- form fields: clearer, easier to tap ---------- */
+:root{--field-bg:#FFFFFF;--field-border:#AEB6B0;--field-focus:#1F3A68;--field-ring:rgba(31,58,104,.18)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--field-bg:#12171A;--field-border:#56616A;--field-focus:#A9C2EC;--field-ring:rgba(169,194,236,.22)}}
+:root[data-theme="dark"]{--field-bg:#12171A;--field-border:#56616A;--field-focus:#A9C2EC;--field-ring:rgba(169,194,236,.22)}
+.field{gap:6px}
+.field label{font-size:12.5px;font-weight:700;letter-spacing:.05em;color:var(--ink)}
+.field input,.field textarea,.field select,.addform input,.searchbar input,.ai label input[type=number]{
+  background:var(--field-bg);border:1.5px solid var(--field-border);border-radius:10px;
+  padding:12px 14px;font-size:16px;color:var(--ink);min-height:48px;
+  transition:border-color .12s,box-shadow .12s}
+.field textarea{min-height:84px;resize:vertical}
+.field input:hover,.field textarea:hover,.field select:hover,.addform input:hover,.searchbar input:hover{border-color:var(--muted)}
+.field input:focus,.field textarea:focus,.field select:focus,.addform input:focus,.searchbar input:focus{
+  outline:none;border-color:var(--field-focus);box-shadow:0 0 0 4px var(--field-ring)}
+.field .hint{font-size:12.5px}
+.addform{gap:10px}
+.searchbar input{padding-left:16px}
 </style>
 </head>
 <body>
@@ -197,7 +216,7 @@ code{font-family:var(--mono);font-size:13px;background:var(--surface-2);padding:
       <div class="row"><button class="btn" id="settingsBtn" hidden>Settings</button><button class="btn kraft" id="newBoxBtn">+ New box</button></div>
     </header>
         <div class="searchbar">
-      <input id="q" type="search" placeholder="Find anything: “Christmas lights”, “extension cord”, “Shelf B”…" autocomplete="off">
+      <input id="q" type="search" placeholder="Search: ex: Christmas lights, extension cord, Shelf B" autocomplete="off">
     </div>
     <div class="chips" id="chips"></div>
     <div class="stats" id="stats"></div>
@@ -222,7 +241,7 @@ code{font-family:var(--mono);font-size:13px;background:var(--surface-2);padding:
     <section class="card">
       <div class="hd"><h3 id="itemsTitle">Items</h3></div>
       <form class="addform" id="addItemForm" autocomplete="off">
-        <input id="newName" class="full" placeholder="Item name (e.g. Folding table, 6 ft)" required>
+        <input id="newName" class="full" placeholder="Item name, ex: folding table, 6 ft" required>
         <input id="newQty" type="number" min="0" value="1" aria-label="Quantity">
         <input id="newLink" placeholder="Order link (optional)">
         <button class="btn primary" type="submit">Add</button>
@@ -520,11 +539,11 @@ function boxSheet(b) {
     <h2>${isNew ? "New box" : "Edit " + esc(codeOf(b))}</h2>
     <div class="two">
       <div class="field"><label for="bNum">Box number</label><input id="bNum" type="number" min="1" value="${esc(b.number)}" required><span class="hint">Write this on the box with a marker.</span></div>
-      <div class="field"><label for="bCat">Ministry / category</label><input id="bCat" list="catList" value="${esc(b.category)}" placeholder="Christmas"></div>
+      <div class="field"><label for="bCat">Ministry / category</label><input id="bCat" list="catList" value="${esc(b.category)}" placeholder="ex: Christmas"></div>
     </div>
-    <div class="field"><label for="bName">What's in it (short name)</label><input id="bName" value="${esc(b.name)}" placeholder="Nativity set and tree lights" required></div>
-    <div class="field"><label for="bLoc">Where it lives</label><input id="bLoc" list="locList" value="${esc(b.location)}" placeholder="Storage room, Shelf B, top"></div>
-    <div class="field"><label for="bNotes">Notes</label><textarea id="bNotes" rows="2" placeholder="Fragile, heavy, belongs to Women's ministry…">${esc(b.notes)}</textarea></div>
+    <div class="field"><label for="bName">What's in it (short name)</label><input id="bName" value="${esc(b.name)}" placeholder="ex: Nativity set and tree lights" required></div>
+    <div class="field"><label for="bLoc">Where it lives</label><input id="bLoc" list="locList" value="${esc(b.location)}" placeholder="ex: Storage room, Shelf B, top"></div>
+    <div class="field"><label for="bNotes">Notes</label><textarea id="bNotes" rows="2" placeholder="ex: fragile, heavy, belongs to Women's ministry">${esc(b.notes)}</textarea></div>
     <div class="foot">
       <div>${isNew ? "" : `<button type="button" class="btn danger" id="delBox">Delete box</button>`}</div>
       <div class="row"><button type="button" class="btn" data-close>Cancel</button><button class="btn primary">${isNew ? "Create box" : "Save"}</button></div>
@@ -562,8 +581,8 @@ function itemSheet(it) {
       <div class="field"><label for="iQty">Quantity</label><input id="iQty" type="number" min="0" value="${esc(it.qty)}"></div>
       <div class="field"><label for="iBox">Box</label><select id="iBox">${boxList().map(b => `<option value="${esc(b.id)}" ${b.id === it.boxId ? "selected" : ""}>${esc(codeOf(b))} · ${esc(b.name)}</option>`).join("")}</select></div>
     </div>
-    <div class="field"><label for="iNotes">Notes</label><input id="iNotes" value="${esc(it.notes)}" placeholder="Color, size, condition"></div>
-    <div class="field"><label for="iLink">Order link</label><input id="iLink" value="${esc(it.link)}" placeholder="https://…"><span class="hint">Paste the exact product page. Left blank, “Order more” searches Amazon for the item name.</span></div>
+    <div class="field"><label for="iNotes">Notes</label><input id="iNotes" value="${esc(it.notes)}" placeholder="ex: white, 6 ft, good condition"></div>
+    <div class="field"><label for="iLink">Order link</label><input id="iLink" value="${esc(it.link)}" placeholder="ex: https://www.amazon.com/…"><span class="hint">Paste the exact product page. Left blank, “Order more” searches Amazon for the item name.</span></div>
     <label class="row" style="font-size:14px"><input type="checkbox" id="iLow" ${it.low ? "checked" : ""}> Running low, add to restock list</label>
     <div class="foot">
       <button type="button" class="btn danger" id="delItem">Delete item</button>
