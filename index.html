@@ -271,23 +271,23 @@ function codeGate(msg) {
   const saved = (() => { try { return localStorage.getItem("storit-name") || ""; } catch { return ""; } })();
   showGate(`${gateBrand}
     ${msg ? `<p class="notice">${esc(msg)}</p>` : ""}
-    <p>Enter the church access code to open the storage inventory. You only do this once on each phone or computer.</p>
+    <p>Log in to open the storage inventory. You only do this once on each phone or computer.</p>
     <form id="codeForm" class="wrap" style="gap:12px;padding:0;max-width:none" autocomplete="off">
-      <div class="field"><label for="gName">Your name</label><input id="gName" value="${esc(saved)}" placeholder="First and last name" required></div>
-      <div class="field"><label for="gCode">Access code</label><input id="gCode" autocapitalize="off" autocorrect="off" spellcheck="false" required></div>
-      <button class="btn primary">Open Storit</button>
+      <div class="field"><label for="gLogin">Login</label><input id="gLogin" autocapitalize="characters" autocorrect="off" spellcheck="false" required></div>
+      <div class="field"><label for="gCode">Access code</label><input id="gCode" type="password" inputmode="numeric" autocorrect="off" spellcheck="false" required></div>
+      <button class="btn primary">Log in</button>
     </form>`);
   $("#codeForm").addEventListener("submit", async e => {
     e.preventDefault();
-    const name = $("#gName").value.trim(), code = $("#gCode").value.trim();
+    const login = $("#gLogin").value.trim().toUpperCase(), code = $("#gCode").value.trim();
+    const name = saved || login;
     const btn = e.target.querySelector("button"); btn.disabled = true; btn.textContent = "Checking…";
     try {
-      await setDoc(doc(db, "members", myUid), { code, name, joinedAt: Date.now() });
-      try { localStorage.setItem("storit-name", name); } catch {}
+      await setDoc(doc(db, "members", myUid), { login, code, name, joinedAt: Date.now() });
       enter(name);
     } catch (err) {
-      btn.disabled = false; btn.textContent = "Open Storit";
-      toast(String(err.code).includes("permission") ? "That code isn't right. Check with the storage coordinator." : errMsg(err));
+      btn.disabled = false; btn.textContent = "Log in";
+      toast(String(err.code).includes("permission") ? "Login or access code isn't right." : errMsg(err));
     }
   });
 }
@@ -319,7 +319,7 @@ if (!configured) {
 
 function subscribe() {
   const onErr = e => {
-    if (String(e.code).includes("permission")) codeGate("The access code has changed. Enter the new code to continue.");
+    if (String(e.code).includes("permission")) codeGate("The access code has changed. Log in again with the new code.");
     else toast(errMsg(e));
   };
   unsubs.push(onSnapshot(collection(db, "boxes"), snap => {
@@ -557,7 +557,7 @@ function itemSheet(it) {
 async function settingsSheet() {
   openSheet(`<div class="sheet">
     <h2>Settings</h2>
-    <div class="field"><label for="sName">Your name on this device</label><input id="sName" value="${esc(S.me)}"><span class="hint">Shown as who last changed a box or item.</span></div>
+    <div class="field"><label for="sName">Your name on this device (optional)</label><input id="sName" value="${esc(S.me)}"><span class="hint">Shown as who last changed a box or item. Leave as WGBC if you like.</span></div>
     <div class="field"><label>Backup</label>
       <div class="row">
         <button class="btn" id="exportBtn">Download backup</button>
@@ -578,7 +578,7 @@ async function settingsSheet() {
       closeSheet();
     };
     const f = o.querySelector("#forgetBtn");
-    f.onclick = () => armed(f, "Tap again: you'll need the code to get back in", async () => {
+    f.onclick = () => armed(f, "Tap again: you'll need the login and code to get back in", async () => {
       closeSheet();
       try { await deleteDoc(doc(db, "members", myUid)); } catch {}
       signOut(auth);
