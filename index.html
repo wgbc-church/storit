@@ -196,6 +196,46 @@ code{font-family:var(--mono);font-size:13px;background:var(--surface-2);padding:
 .field .hint{font-size:12.5px}
 .addform{gap:10px}
 .searchbar input{padding-left:16px}
+
+/* ---------- section tabs ---------- */
+.tabs{display:flex;gap:4px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:4px}
+.tabs button{flex:1;border:0;background:transparent;border-radius:9px;padding:10px 12px;font-weight:700;font-size:15px;color:var(--muted);min-height:44px}
+.tabs button[aria-selected="true"]{background:var(--surface);color:var(--navy);box-shadow:var(--shadow)}
+/* ---------- shopping ---------- */
+.money{font-variant-numeric:tabular-nums;font-weight:700}
+.money.big{font-size:18px;color:var(--ink)}
+.evcard .meta{gap:8px;padding:16px}
+.evcard h3{font-size:18px}
+.progress{height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.progress i{display:block;height:100%;background:var(--ok);border-radius:99px;transition:width .3s}
+.sumgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.sum{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:2px}
+.sum span{font-size:12.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.sum b{font-size:22px}
+.sum.ok b{color:var(--ok)}
+.sumbar{grid-column:1/-1;display:flex;flex-direction:column;gap:6px}
+@media (max-width:520px){.sumgrid{grid-template-columns:1fr 1fr}.sum:first-child{grid-column:1/-1}}
+.chip.add{border-style:dashed;color:var(--link)}
+.listcard .hd{align-items:flex-start}
+.listcard .lname{font-size:18px;letter-spacing:0;text-transform:none;color:var(--ink)}
+.shopadd{display:grid;grid-template-columns:2fr 2fr 110px 76px auto;gap:10px}
+.shopadd input{background:var(--field-bg);border:1.5px solid var(--field-border);border-radius:10px;padding:12px 14px;font-size:16px;min-height:48px;min-width:0;color:var(--ink)}
+.shopadd input:focus{outline:none;border-color:var(--field-focus);box-shadow:0 0 0 4px var(--field-ring)}
+@media (max-width:760px){.shopadd{grid-template-columns:1fr 90px}.shopadd .nm,.shopadd .lk{grid-column:1/-1}.shopadd .pr{grid-column:1}.shopadd .qt{grid-column:2}.shopadd button{grid-column:1/-1}}
+.slist{border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.srow{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:12px;border-top:1px solid var(--line);background:var(--surface)}
+.srow:first-child{border-top:0}
+.srow .tick{width:30px;height:30px;border-radius:8px;border:2px solid var(--field-border);background:var(--field-bg);color:#fff;font-weight:800;font-size:16px;line-height:1;padding:0}
+.srow .tick[aria-pressed="true"]{background:var(--ok);border-color:var(--ok)}
+.srow .sinfo{cursor:pointer;min-width:0}
+.srow .name{font-weight:600;overflow-wrap:anywhere}
+.srow .sub{color:var(--muted);font-size:13px;overflow-wrap:anywhere}
+.srow .sub a{font-weight:600}
+.srow .sright{display:flex;align-items:center;gap:4px}
+.srow.done .name{text-decoration:line-through;color:var(--muted)}
+.srow.done .money{color:var(--muted)}
+.subtotal{display:flex;justify-content:space-between;align-items:center;padding:4px 4px 0;font-size:15px}
+.subtotal b{font-size:18px}
 </style>
 </head>
 <body>
@@ -207,20 +247,43 @@ code{font-family:var(--mono);font-size:13px;background:var(--surface-2);padding:
   <div id="gateBody"><div class="logincard"><p class="fine">Loading…</p></div></div>
 </div>
 <div class="wrap" id="app" hidden>
-  <!-- HOME -->
-  <div id="home" style="display:flex;flex-direction:column;gap:20px">
     <header class="top">
       <div class="brand">
         <h1 class="lockup" aria-label="WGBC Storit"><svg class="cube" viewBox="0 0 100 108" aria-hidden="true"><polygon points="50,6 94,28 50,50 6,28" fill="var(--k1)"/><polygon points="6,28 50,50 50,102 6,80" fill="var(--k2)"/><polygon points="50,50 94,28 94,80 50,102" fill="var(--k3)"/><polygon points="24,19 34,14 76,35 66,40" fill="var(--tape)"/><polygon points="66,40 76,35 76,50 66,55" fill="var(--tape)" opacity=".85"/></svg><span class="wm"><span class="org">WGBC</span><span class="word">storit</span><span class="tag">One box at a time</span></span></h1>
       </div>
-      <div class="row"><button class="btn" id="settingsBtn" hidden>Settings</button><button class="btn kraft" id="newBoxBtn">+ New box</button></div>
+      <div class="row"><button class="btn" id="settingsBtn" hidden>Settings</button></div>
     </header>
+  <nav class="tabs" role="tablist" aria-label="Sections">
+    <button role="tab" data-tab="storage" id="tabStorage">Storage boxes</button>
+    <button role="tab" data-tab="shop" id="tabShop">Shopping lists</button>
+  </nav>
+  <!-- HOME -->
+  <div id="home" style="display:flex;flex-direction:column;gap:20px">
         <div class="searchbar">
       <input id="q" type="search" placeholder="Search: ex: Christmas lights, extension cord, Shelf B" autocomplete="off">
+      <button class="btn kraft" id="newBoxBtn">+ New box</button>
     </div>
     <div class="chips" id="chips"></div>
     <div class="stats" id="stats"></div>
     <div id="homeBody"></div>
+  </div>
+
+  <!-- SHOPPING: all events -->
+  <div id="shopView" hidden style="display:flex;flex-direction:column;gap:18px">
+    <div class="row" style="justify-content:space-between">
+      <div><h2 style="font-size:22px">Shopping lists</h2><span class="muted">One event, a list for each area, links and a running total.</span></div>
+      <button class="btn kraft" data-newevent>+ New event</button>
+    </div>
+    <div id="shopBody"></div>
+  </div>
+
+  <!-- SHOPPING: one event -->
+  <div id="eventView" hidden style="display:flex;flex-direction:column;gap:18px">
+    <button class="btn ghost back" id="evBack">← All events</button>
+    <div class="boxhead" id="eventHead"></div>
+    <div class="sumgrid" id="eventSum"></div>
+    <div class="chips" id="listChips"></div>
+    <div id="eventLists" style="display:flex;flex-direction:column;gap:16px"></div>
   </div>
 
   <!-- BOX -->
@@ -292,7 +355,8 @@ if (configured) {
 }
 
 // ---------- state ----------
-const S = { boxes: new Map(), items: new Map(), view: "home", boxId: null, q: "", filter: "all", ready: false, me: null, role: null };
+const SH = { events: new Map(), lists: new Map(), items: new Map() };
+const S = { boxes: new Map(), items: new Map(), view: "home", boxId: null, eventId: null, listFilter: null, q: "", filter: "all", ready: false, me: null, role: null };
 const photoData = new Map();   // photoId -> dataURL
 const photoLoading = new Set();
 let unsubs = [];
@@ -342,6 +406,7 @@ function codeGate(msg) {
 
 function enter(name) {
   S.me = name || "Volunteer";
+  try { if (localStorage.getItem("storit-tab") === "shop") S.view = "shop"; } catch {}
   hideGate(); $("#settingsBtn").hidden = false;
   subscribe(); render();
 }
@@ -373,6 +438,10 @@ function subscribe() {
   unsubs.push(onSnapshot(collection(db, "boxes"), snap => {
     S.boxes.clear(); snap.forEach(d => S.boxes.set(d.id, { ...d.data(), id: d.id })); S.ready = true; render();
   }, onErr));
+  const sub = (col, map) => unsubs.push(onSnapshot(collection(db, col), snap => {
+    map.clear(); snap.forEach(d => map.set(d.id, { ...d.data(), id: d.id })); render();
+  }, onErr));
+  sub("events", SH.events); sub("lists", SH.lists); sub("shopitems", SH.items);
   unsubs.push(onSnapshot(collection(db, "items"), snap => {
     S.items.clear(); snap.forEach(d => { if (!pending.has(d.id)) S.items.set(d.id, { ...d.data(), id: d.id }); else S.items.set(d.id, localItems.get(d.id) || { ...d.data(), id: d.id }); }); render();
   }, onErr));
@@ -423,7 +492,13 @@ function render() {
   if ($("#app").hidden) return;
   $("#home").hidden = S.view !== "home";
   $("#boxView").hidden = S.view !== "box";
-  if (S.view === "home") renderHome(); else renderBox();
+  $("#shopView").hidden = S.view !== "shop";
+  $("#eventView").hidden = S.view !== "event";
+  const shopping = S.view === "shop" || S.view === "event";
+  $("#tabStorage").setAttribute("aria-selected", !shopping);
+  $("#tabShop").setAttribute("aria-selected", shopping);
+  if (S.view === "home") renderHome(); else if (S.view === "box") renderBox();
+  else if (S.view === "shop") renderShop(); else renderEvent();
   const locs = [...new Set(boxList().map(b => b.location).filter(Boolean))];
   $("#locList").innerHTML = locs.map(l => `<option>${esc(l)}</option>`).join("");
 }
@@ -515,7 +590,13 @@ function renderBox() {
     : `<div class="muted">No items listed yet. Add them one by one above.</div>`;
 }
 
-function go(view, boxId) { S.view = view; S.boxId = boxId || null; render(); window.scrollTo(0, 0); }
+function go(view, id) {
+  S.view = view;
+  if (view === "box") S.boxId = id || null;
+  if (view === "event") S.eventId = id || null;
+  try { localStorage.setItem("storit-tab", (view === "shop" || view === "event") ? "shop" : "storage"); } catch {}
+  render(); window.scrollTo(0, 0);
+}
 
 // ---------- sheets ----------
 function openSheet(html, onMount) {
@@ -669,7 +750,8 @@ async function exportBackup() {
       const d = await getDoc(doc(db, "photos", p)); if (d.exists()) photos[p] = d.data();
     }
     const data = { app: "WGBC Storit", version: 1, exportedAt: new Date().toISOString(),
-      boxes: [...S.boxes.values()], items: [...S.items.values()], photos };
+      boxes: [...S.boxes.values()], items: [...S.items.values()], photos,
+      events: [...SH.events.values()], lists: [...SH.lists.values()], shopitems: [...SH.items.values()] };
     const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
     a.download = `storit-backup-${new Date().toISOString().slice(0, 10)}.json`; a.click();
@@ -685,6 +767,7 @@ async function importBackup(e) {
     const writes = [];
     for (const b of data.boxes) { writes.push(["boxes", b.id, strip(b)]); writes.push(["boxnums", String(b.number), { boxId: b.id }]); }
     for (const i of data.items) writes.push(["items", i.id, strip(i)]);
+    for (const c of ["events", "lists", "shopitems"]) for (const x of data[c] || []) writes.push([c, x.id, strip(x)]);
     for (const [id, p] of Object.entries(data.photos || {})) writes.push(["photos", id, p]);
     // photos are large: commit in small batches
     for (let k = 0; k < writes.length;) {
@@ -698,6 +781,317 @@ async function importBackup(e) {
   } catch (err) { toast(errMsg(err)); }
 }
 
+// ================================================================
+//  SHOPPING LISTS: events → lists (areas) → items with link, price, qty
+// ================================================================
+const LIST_SUGGESTIONS = ["Sanctuary", "Foyer", "Hallways", "Activity Hall", "Kitchen", "Classrooms", "Outdoors", "Stage"];
+const money = n => (Number(n) || 0).toLocaleString("en-US", { style: "currency", currency: "USD" });
+const parsePrice = v => { const n = parseFloat(String(v || "").replace(/[^0-9.]/g, "")); return isFinite(n) ? Math.round(n * 100) / 100 : 0; };
+const lineTotal = it => (Number(it.price) || 0) * (Number(it.qty) || 0);
+const eventList = () => [...SH.events.values()].sort((a, b) => (a.date || "9999").localeCompare(b.date || "9999") || (a.createdAt || 0) - (b.createdAt || 0));
+const listsOf = evId => [...SH.lists.values()].filter(l => l.eventId === evId).sort((a, b) => (a.order ?? a.createdAt ?? 0) - (b.order ?? b.createdAt ?? 0));
+const sitemsOf = listId => [...SH.items.values()].filter(i => i.listId === listId).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+const sitemsOfEvent = evId => [...SH.items.values()].filter(i => i.eventId === evId);
+function sums(items) {
+  const total = items.reduce((s, i) => s + lineTotal(i), 0);
+  const bought = items.filter(i => i.bought).reduce((s, i) => s + lineTotal(i), 0);
+  return { total, bought, left: total - bought, n: items.length, nb: items.filter(i => i.bought).length };
+}
+function fmtDate(d) {
+  if (!d) return "";
+  const dt = new Date(d + "T12:00:00");
+  return isNaN(dt) ? d : dt.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+// A readable name from a product link, e.g. amazon.com/Amazon-Basics-Folding-Table/dp/B0… → "Amazon Basics Folding Table"
+function nameFromLink(url) {
+  try {
+    const u = new URL(url);
+    const parts = u.pathname.split("/").filter(Boolean);
+    const dp = parts.findIndex(p => p === "dp" || p === "gp" || p === "p" || p === "ip");
+    let seg = dp > 0 ? parts[dp - 1] : parts.filter(p => /[a-z]/i.test(p) && /[-_]/.test(p) && !/^[A-Z0-9]{8,}$/.test(p)).sort((a, b) => b.length - a.length)[0];
+    if (seg) {
+      seg = decodeURIComponent(seg).replace(/\.(html?|aspx?|php)$/i, "").replace(/[-_+]+/g, " ").replace(/\b\d{6,}\b/g, "").replace(/\s+/g, " ").trim();
+      if (seg.length > 2) return seg.charAt(0).toUpperCase() + seg.slice(1, 90);
+    }
+    return "Item from " + u.hostname.replace(/^www\./, "");
+  } catch { return ""; }
+}
+const isUrl = s => /^https?:\/\/\S+$/i.test(String(s || "").trim());
+const shopHost = url => { try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return ""; } };
+
+// ---------- writes ----------
+async function sput(col, id, data) {
+  SH[col === "events" ? "events" : col === "lists" ? "lists" : "items"].set(id, { ...data, id }); render();
+  try { await setDoc(doc(db, col, id), data); } catch (e) { toast(errMsg(e)); }
+}
+async function sdel(col, id) {
+  SH[col === "events" ? "events" : col === "lists" ? "lists" : "items"].delete(id); render();
+  try { await deleteDoc(doc(db, col, id)); } catch (e) { toast(errMsg(e)); }
+}
+const stamp = () => ({ updatedAt: Date.now(), updatedBy: S.me });
+
+// ---------- views ----------
+function renderShop() {
+  const evs = eventList();
+  $("#shopBody").innerHTML = evs.length ? `<div class="grid">${evs.map(ev => {
+    const s = sums(sitemsOfEvent(ev.id)), nl = listsOf(ev.id).length, pct = s.total ? Math.round(s.bought / s.total * 100) : 0;
+    return `<button class="box evcard" data-openev="${esc(ev.id)}">
+      <div class="meta">
+        <div class="row" style="justify-content:space-between"><span class="code">${ev.date ? esc(fmtDate(ev.date)) : "No date"}</span><span class="money big">${money(s.total)}</span></div>
+        <h3>${esc(ev.name || "Untitled event")}</h3>
+        <div class="muted">${nl} ${nl === 1 ? "list" : "lists"} · ${s.n} ${s.n === 1 ? "item" : "items"}</div>
+        <div class="progress" aria-label="${pct}% bought"><i style="width:${pct}%"></i></div>
+        <div class="muted">${s.n ? `${s.nb} of ${s.n} bought · ${money(s.left)} still to buy` : "Nothing added yet"}</div>
+      </div>
+    </button>`;
+  }).join("")}</div>`
+  : `<div class="empty"><strong>No shopping lists yet.</strong>Plan what to buy for an event. For example VBS 2027, with a list for the Sanctuary, Foyer, Hallways and Activity Hall.<button class="btn kraft" data-newevent>+ New event</button></div>`;
+}
+
+function captureShopForms() {
+  const keep = {};
+  document.querySelectorAll("[data-addform]").forEach(f => {
+    const id = f.dataset.addform;
+    keep[id] = [...f.querySelectorAll("input")].map(i => i.value);
+  });
+  const a = document.activeElement;
+  return { keep, focus: a && a.id && a.closest && a.closest("#eventView") ? { id: a.id, s: a.selectionStart, e: a.selectionEnd } : null };
+}
+function restoreShopForms(st) {
+  Object.entries(st.keep).forEach(([id, vals]) => {
+    const f = document.querySelector(`[data-addform="${CSS.escape(id)}"]`); if (!f) return;
+    f.querySelectorAll("input").forEach((i, k) => { if (vals[k] != null) i.value = vals[k]; });
+  });
+  if (st.focus) { const el = document.getElementById(st.focus.id); if (el) { el.focus(); try { el.setSelectionRange(st.focus.s, st.focus.e); } catch {} } }
+}
+
+function renderEvent() {
+  const ev = SH.events.get(S.eventId);
+  if (!ev) { S.view = "shop"; render(); return; }
+  const st = captureShopForms();
+  const lists = listsOf(ev.id), all = sitemsOfEvent(ev.id), s = sums(all);
+  const pct = s.total ? Math.round(s.bought / s.total * 100) : 0;
+  if (S.listFilter && !lists.some(l => l.id === S.listFilter)) S.listFilter = null;
+  $("#eventHead").innerHTML = `
+    <div>
+      <div class="code">${ev.date ? esc(fmtDate(ev.date)) : "No date set"}</div>
+      <h2 style="font-size:28px;margin-top:8px">${esc(ev.name || "Untitled event")}</h2>
+      ${ev.notes ? `<p class="desc">${esc(ev.notes)}</p>` : ""}
+    </div>
+    <div class="row"><button class="btn" data-copyev>Copy all lists</button><button class="btn" data-editev>Edit event</button></div>`;
+  $("#eventSum").innerHTML = `
+    <div class="sum"><span>Total</span><b class="money">${money(s.total)}</b></div>
+    <div class="sum ok"><span>Bought</span><b class="money">${money(s.bought)}</b></div>
+    <div class="sum"><span>Still to buy</span><b class="money">${money(s.left)}</b></div>
+    <div class="sumbar"><div class="progress"><i style="width:${pct}%"></i></div><span class="muted">${s.nb} of ${s.n} items bought</span></div>`;
+  $("#listChips").innerHTML = lists.length ? [`<button class="chip" data-lfilter="" aria-pressed="${!S.listFilter}">All lists<span class="n">${lists.length}</span></button>`]
+    .concat(lists.map(l => `<button class="chip" data-lfilter="${esc(l.id)}" aria-pressed="${S.listFilter === l.id}">${esc(l.name)}<span class="n">${money(sums(sitemsOf(l.id)).total)}</span></button>`)).join("")
+    + `<button class="chip add" data-addlist>+ Add list</button>` : "";
+  const shown = S.listFilter ? lists.filter(l => l.id === S.listFilter) : lists;
+  $("#eventLists").innerHTML = lists.length ? shown.map(l => listCard(l)).join("")
+    : `<div class="empty"><strong>Add the first list.</strong>Make one list for each area or team, like Sanctuary or Foyer.<button class="btn kraft" data-addlist>+ Add list</button></div>`;
+  restoreShopForms(st);
+}
+
+function listCard(l) {
+  const its = sitemsOf(l.id), s = sums(its), id = l.id;
+  return `<section class="card listcard">
+    <div class="hd">
+      <div><h3 class="lname">${esc(l.name)}</h3><span class="muted">${s.n ? `${s.nb} of ${s.n} bought` : "No items yet"}</span></div>
+      <div class="row"><span class="money big">${money(s.total)}</span><button class="btn sm ghost" data-copylist="${esc(id)}">Copy</button><button class="btn sm ghost" data-editlist="${esc(id)}">Edit</button></div>
+    </div>
+    <form class="shopadd" data-addform="${esc(id)}" autocomplete="off">
+      <input id="sa-name-${esc(id)}" class="nm" placeholder="What to buy, ex: balloons, blue" aria-label="Item">
+      <input id="sa-link-${esc(id)}" class="lk" inputmode="url" placeholder="Paste link, ex: https://www.amazon.com/…" aria-label="Link">
+      <input id="sa-price-${esc(id)}" class="pr" inputmode="decimal" placeholder="$ price" aria-label="Price each">
+      <input id="sa-qty-${esc(id)}" class="qt" type="number" min="1" value="1" aria-label="Quantity">
+      <button class="btn primary" type="submit">Add</button>
+    </form>
+    ${its.length ? `<div class="slist">${its.map(sitemRow).join("")}</div>` : ""}
+    ${its.length ? `<div class="subtotal"><span>${esc(l.name)} total</span><b class="money">${money(s.total)}</b></div>` : ""}
+  </section>`;
+}
+
+function sitemRow(it) {
+  const q = Number(it.qty) || 0, p = Number(it.price) || 0;
+  return `<div class="srow${it.bought ? " done" : ""}" data-sitem="${esc(it.id)}">
+    <button class="tick" data-bought aria-pressed="${!!it.bought}" aria-label="${it.bought ? "Mark as not bought" : "Mark as bought"}">${it.bought ? "✓" : ""}</button>
+    <div class="sinfo">
+      <div class="name">${esc(it.name)}</div>
+      <div class="sub">${q} × ${p ? money(p) : "no price"}${it.notes ? " · " + esc(it.notes) : ""}${it.link ? ` · <a href="${esc(it.link)}" target="_blank" rel="noopener">${esc(shopHost(it.link) || "link")} ↗</a>` : ""}</div>
+    </div>
+    <div class="sright"><b class="money">${money(lineTotal(it))}</b><button class="btn sm ghost" data-sedit>Edit</button></div>
+  </div>`;
+}
+
+// ---------- sheets ----------
+function eventSheet(ev) {
+  const isNew = !ev; ev = ev || {};
+  openSheet(`<form class="sheet" id="evForm" autocomplete="off">
+    <h2>${isNew ? "New event" : "Edit event"}</h2>
+    <div class="field"><label for="evName">Event name</label><input id="evName" value="${esc(ev.name)}" placeholder="ex: VBS 2027" required></div>
+    <div class="field"><label for="evDate">Date (optional)</label><input id="evDate" type="date" value="${esc(ev.date)}"></div>
+    ${isNew ? `<div class="field"><label>Lists to start with</label>
+      <div class="chips" id="evPicks">${LIST_SUGGESTIONS.map((n, i) => `<button type="button" class="chip" data-pick aria-pressed="${i < 4}">${esc(n)}</button>`).join("")}</div>
+      <input id="evMore" placeholder="Other lists, ex: Nursery, Welcome table">
+      <span class="hint">Tap to choose. Separate extra lists with commas. You can add more later.</span></div>` : ""}
+    <div class="field"><label for="evNotes">Notes (optional)</label><textarea id="evNotes" rows="2" placeholder="ex: budget $1,500, receipts to the church office">${esc(ev.notes)}</textarea></div>
+    <div class="foot">
+      <div>${isNew ? "" : `<button type="button" class="btn danger" id="delEv">Delete event</button>`}</div>
+      <div class="row"><button type="button" class="btn" data-close>Cancel</button><button class="btn primary">${isNew ? "Create event" : "Save"}</button></div>
+    </div>
+  </form>`, o => {
+    o.querySelectorAll("[data-pick]").forEach(c => c.onclick = () => c.setAttribute("aria-pressed", c.getAttribute("aria-pressed") !== "true"));
+    o.querySelector("#evForm").addEventListener("submit", async e => {
+      e.preventDefault();
+      const id = isNew ? uid() : ev.id;
+      const data = { ...(isNew ? { createdAt: Date.now(), createdBy: S.me } : strip(ev)),
+        name: $("#evName").value.trim(), date: $("#evDate").value, notes: $("#evNotes").value.trim(), ...stamp() };
+      sput("events", id, data);
+      if (isNew) {
+        const picks = [...o.querySelectorAll('[data-pick][aria-pressed="true"]')].map(c => c.textContent.trim())
+          .concat($("#evMore").value.split(",").map(x => x.trim()).filter(Boolean));
+        let k = 0;
+        for (const name of [...new Set(picks)]) sput("lists", uid(), { eventId: id, name, order: k++, createdAt: Date.now() + k, ...stamp() });
+        closeSheet(); S.listFilter = null; go("event", id);
+      } else { closeSheet(); toast("Saved"); }
+    });
+    const d = o.querySelector("#delEv");
+    d && d.addEventListener("click", () => armed(d, "Tap again to delete the event and all its lists", async () => {
+      closeSheet(); go("shop");
+      for (const it of sitemsOfEvent(ev.id)) await sdel("shopitems", it.id);
+      for (const l of listsOf(ev.id)) await sdel("lists", l.id);
+      await sdel("events", ev.id); toast("Event deleted");
+    }));
+  });
+}
+
+function listSheet(l) {
+  const isNew = !l; l = l || {};
+  const ev = SH.events.get(isNew ? S.eventId : l.eventId);
+  openSheet(`<form class="sheet" id="lsForm" autocomplete="off">
+    <h2>${isNew ? "Add a list" : "Edit list"}</h2>
+    <div class="field"><label for="lsName">List name</label><input id="lsName" list="lsSug" value="${esc(l.name)}" placeholder="ex: Activity Hall" required>
+      <datalist id="lsSug">${LIST_SUGGESTIONS.map(n => `<option>${esc(n)}</option>`).join("")}</datalist></div>
+    <div class="foot">
+      <div>${isNew ? "" : `<button type="button" class="btn danger" id="delLs">Delete list</button>`}</div>
+      <div class="row"><button type="button" class="btn" data-close>Cancel</button><button class="btn primary">${isNew ? "Add list" : "Save"}</button></div>
+    </div>
+  </form>`, o => {
+    o.querySelector("#lsForm").addEventListener("submit", e => {
+      e.preventDefault();
+      const name = $("#lsName").value.trim(); if (!name) return;
+      if (isNew) { const id = uid(); sput("lists", id, { eventId: ev.id, name, order: listsOf(ev.id).length, createdAt: Date.now(), ...stamp() }); if (S.listFilter) S.listFilter = id; }
+      else sput("lists", l.id, { ...strip(l), name, ...stamp() });
+      closeSheet();
+    });
+    const d = o.querySelector("#delLs");
+    d && d.addEventListener("click", () => armed(d, `Tap again to delete ${l.name} and its items`, async () => {
+      closeSheet();
+      for (const it of sitemsOf(l.id)) await sdel("shopitems", it.id);
+      await sdel("lists", l.id); toast("List deleted");
+    }));
+  });
+}
+
+function sitemSheet(it) {
+  const lists = listsOf(it.eventId);
+  openSheet(`<form class="sheet" id="siForm" autocomplete="off">
+    <h2>Edit item</h2>
+    <div class="field"><label for="siName">Item</label><input id="siName" value="${esc(it.name)}" required></div>
+    <div class="field"><label for="siLink">Link</label><input id="siLink" inputmode="url" value="${esc(it.link)}" placeholder="ex: https://www.amazon.com/…"></div>
+    <div class="two">
+      <div class="field"><label for="siPrice">Price each</label><input id="siPrice" inputmode="decimal" value="${it.price ? esc(Number(it.price).toFixed(2)) : ""}" placeholder="ex: 12.99"></div>
+      <div class="field"><label for="siQty">Quantity</label><input id="siQty" type="number" min="0" value="${esc(it.qty)}"></div>
+    </div>
+    <div class="field"><label for="siList">List</label><select id="siList">${lists.map(l => `<option value="${esc(l.id)}" ${l.id === it.listId ? "selected" : ""}>${esc(l.name)}</option>`).join("")}</select></div>
+    <div class="field"><label for="siNotes">Notes (optional)</label><input id="siNotes" value="${esc(it.notes)}" placeholder="ex: size large, pick up at Costco"></div>
+    <label class="row" style="font-size:15px"><input type="checkbox" id="siBought" ${it.bought ? "checked" : ""}> Already bought</label>
+    <div class="foot">
+      <button type="button" class="btn danger" id="delSi">Delete item</button>
+      <div class="row"><button type="button" class="btn" data-close>Cancel</button><button class="btn primary">Save</button></div>
+    </div>
+  </form>`, o => {
+    o.querySelector("#siForm").addEventListener("submit", e => {
+      e.preventDefault();
+      sput("shopitems", it.id, { ...strip(it), name: $("#siName").value.trim(), link: $("#siLink").value.trim(),
+        price: parsePrice($("#siPrice").value), qty: Math.max(0, parseInt($("#siQty").value, 10) || 0),
+        listId: $("#siList").value, notes: $("#siNotes").value.trim(), bought: $("#siBought").checked, ...stamp() });
+      closeSheet(); toast("Saved");
+    });
+    const d = o.querySelector("#delSi");
+    d.addEventListener("click", () => armed(d, "Tap again to delete", () => { sdel("shopitems", it.id); closeSheet(); toast("Item deleted"); }));
+  });
+}
+
+// ---------- copy as text (for texting / email) ----------
+function listText(l) {
+  const its = sitemsOf(l.id), s = sums(its);
+  const lines = [`${l.name}`].concat(its.map(i => `${i.bought ? "[x]" : "[ ]"} ${i.name} — ${Number(i.qty) || 0} × ${money(i.price)} = ${money(lineTotal(i))}${i.link ? "\n    " + i.link : ""}`));
+  lines.push(`${l.name} total: ${money(s.total)}`);
+  return lines.join("\n");
+}
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); toast("Copied. Paste it into a text or email."); }
+  catch {
+    openSheet(`<div class="sheet"><h2>Copy this list</h2><textarea id="copyBox" rows="12" style="width:100%;font:14px/1.4 var(--mono)">${esc(text)}</textarea><div class="foot"><span></span><button class="btn primary" data-close>Done</button></div></div>`,
+      () => { const t = $("#copyBox"); t.focus(); t.select(); });
+  }
+}
+
+// ---------- events (clicks / forms) ----------
+function shopClick(t) {
+  const oe = t.closest("[data-openev]"); if (oe) { S.listFilter = null; go("event", oe.dataset.openev); return true; }
+  if (t.closest("[data-newevent]")) { eventSheet(null); return true; }
+  if (t.closest("[data-editev]")) { eventSheet(SH.events.get(S.eventId)); return true; }
+  if (t.closest("[data-addlist]")) { listSheet(null); return true; }
+  const el = t.closest("[data-editlist]"); if (el) { listSheet(SH.lists.get(el.dataset.editlist)); return true; }
+  const lf = t.closest("[data-lfilter]"); if (lf) { S.listFilter = lf.dataset.lfilter || null; renderEvent(); return true; }
+  const cl = t.closest("[data-copylist]"); if (cl) { const l = SH.lists.get(cl.dataset.copylist); if (l) copyText(listText(l)); return true; }
+  if (t.closest("[data-copyev]")) {
+    const ev = SH.events.get(S.eventId), s = sums(sitemsOfEvent(ev.id));
+    copyText([`${ev.name}${ev.date ? " (" + fmtDate(ev.date) + ")" : ""} shopping list`, ""].concat(listsOf(ev.id).map(l => listText(l) + "\n")).concat([`GRAND TOTAL: ${money(s.total)}  ·  Bought: ${money(s.bought)}  ·  Still to buy: ${money(s.left)}`]).join("\n"));
+    return true;
+  }
+  const row = t.closest("[data-sitem]"); if (!row) return false;
+  if (t.closest("a")) return true;
+  const it = SH.items.get(row.dataset.sitem); if (!it) return true;
+  if (t.closest("[data-bought]")) { sput("shopitems", it.id, { ...strip(it), bought: !it.bought, ...stamp() }); return true; }
+  if (t.closest("[data-sedit]") || t.closest(".sinfo")) { sitemSheet(it); return true; }
+  return true;
+}
+
+document.addEventListener("submit", e => {
+  const f = e.target.closest && e.target.closest("[data-addform]"); if (!f) return;
+  e.preventDefault();
+  const listId = f.dataset.addform, l = SH.lists.get(listId); if (!l) return;
+  const [nameEl, linkEl, priceEl, qtyEl] = f.querySelectorAll("input");
+  let name = nameEl.value.trim(), link = linkEl.value.trim();
+  if (isUrl(name) && !link) { link = name; name = ""; }
+  if (!name && link) name = nameFromLink(link);
+  if (!name) { nameEl.focus(); toast("Type what to buy, or paste a link."); return; }
+  const price = parsePrice(priceEl.value), qty = Math.max(1, parseInt(qtyEl.value, 10) || 1);
+  nameEl.value = ""; linkEl.value = ""; priceEl.value = ""; qtyEl.value = 1;   // clear before the list re-draws
+  nameEl.focus();
+  sput("shopitems", uid(), { eventId: l.eventId, listId, name, link, price, qty, notes: "", bought: false, createdAt: Date.now(), createdBy: S.me, ...stamp() });
+});
+// Pasting a link into the item box moves it to the link box and fills in a name
+document.addEventListener("paste", e => {
+  const el = e.target; if (!el.classList || !el.classList.contains("nm") || !el.closest("[data-addform]")) return;
+  const txt = (e.clipboardData || window.clipboardData).getData("text").trim();
+  if (!isUrl(txt)) return;
+  e.preventDefault();
+  const f = el.closest("[data-addform]"); f.querySelector(".lk").value = txt;
+  if (!el.value.trim()) el.value = nameFromLink(txt);
+  f.querySelector(".pr").focus();
+});
+// Pasting into the link box fills in a name if it's empty
+document.addEventListener("input", e => {
+  const el = e.target; if (!el.classList || !el.classList.contains("lk") || !el.closest("[data-addform]")) return;
+  const nm = el.closest("[data-addform]").querySelector(".nm");
+  if (!nm.value.trim() && isUrl(el.value)) nm.value = nameFromLink(el.value.trim());
+});
+
 // ---------- events ----------
 $("#newBoxBtn").onclick = () => boxSheet(null);
 $("#settingsBtn").onclick = settingsSheet;
@@ -707,6 +1101,9 @@ $("#q").addEventListener("input", e => { S.q = e.target.value; renderHome(); });
 document.addEventListener("click", e => {
   const t = e.target;
   if (t.closest("#overlay .sheet")) return;
+  const tab = t.closest("[data-tab]"); if (tab) { go(tab.dataset.tab === "shop" ? "shop" : "home"); return; }
+  if (t.closest("#evBack")) { go("shop"); return; }
+  if (shopClick(t)) return;
   const open = t.closest("[data-open]"); if (open) { go("box", open.dataset.open); return; }
   if (t.closest("[data-newbox]")) { boxSheet(null); return; }
   const f = t.closest("[data-filter]"); if (f) { S.filter = f.dataset.filter; S.q = ""; $("#q").value = ""; renderHome(); return; }
