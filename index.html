@@ -236,6 +236,18 @@ code{font-family:var(--mono);font-size:13px;background:var(--surface-2);padding:
 .srow.done .money{color:var(--muted)}
 .subtotal{display:flex;justify-content:space-between;align-items:center;padding:4px 4px 0;font-size:15px}
 .subtotal b{font-size:18px}
+
+.arealist{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.arow{display:grid;grid-template-columns:1fr auto auto;grid-template-areas:"name total chev" "meta total chev";gap:2px 14px;align-items:center;text-align:left;padding:16px 16px 16px 18px;border:0;border-top:1px solid var(--line);background:transparent;min-height:72px}
+.arow:first-child{border-top:0}
+.arow:hover{background:var(--surface-2)}
+.arow .aname{grid-area:name;font-size:18px;font-weight:700;color:var(--ink)}
+.arow .ameta{grid-area:meta;font-size:13px;color:var(--muted)}
+.arow .atotal{grid-area:total;font-size:20px;color:var(--ink)}
+.arow .chev{grid-area:chev;font-size:26px;line-height:1;color:var(--muted)}
+.areatotal{display:flex;flex-direction:column;align-items:flex-end;gap:2px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 16px}
+.areatotal span{font-size:12.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.areatotal b{font-size:26px}
 </style>
 </head>
 <body>
@@ -271,7 +283,7 @@ code{font-family:var(--mono);font-size:13px;background:var(--surface-2);padding:
   <!-- SHOPPING: all events -->
   <div id="shopView" hidden style="display:flex;flex-direction:column;gap:18px">
     <div class="row" style="justify-content:space-between">
-      <div><h2 style="font-size:22px">Shopping lists</h2><span class="muted">One event, a list for each area, links and a running total.</span></div>
+      <div><h2 style="font-size:22px">Shopping lists</h2><span class="muted">Each event has four lists: Sanctuary, Foyer, Hallways and Activity Hall.</span></div>
       <button class="btn kraft" data-newevent>+ New event</button>
     </div>
     <div id="shopBody"></div>
@@ -282,8 +294,14 @@ code{font-family:var(--mono);font-size:13px;background:var(--surface-2);padding:
     <button class="btn ghost back" id="evBack">← All events</button>
     <div class="boxhead" id="eventHead"></div>
     <div class="sumgrid" id="eventSum"></div>
-    <div class="chips" id="listChips"></div>
-    <div id="eventLists" style="display:flex;flex-direction:column;gap:16px"></div>
+    <div class="arealist" id="areaList"></div>
+  </div>
+
+  <!-- SHOPPING: one area's list -->
+  <div id="areaView" hidden style="display:flex;flex-direction:column;gap:18px">
+    <button class="btn ghost back" id="areaBack">← Event</button>
+    <div class="boxhead" id="areaHead"></div>
+    <div id="areaBody"></div>
   </div>
 
   <!-- BOX -->
@@ -494,11 +512,12 @@ function render() {
   $("#boxView").hidden = S.view !== "box";
   $("#shopView").hidden = S.view !== "shop";
   $("#eventView").hidden = S.view !== "event";
-  const shopping = S.view === "shop" || S.view === "event";
+  $("#areaView").hidden = S.view !== "area";
+  const shopping = S.view === "shop" || S.view === "event" || S.view === "area";
   $("#tabStorage").setAttribute("aria-selected", !shopping);
   $("#tabShop").setAttribute("aria-selected", shopping);
   if (S.view === "home") renderHome(); else if (S.view === "box") renderBox();
-  else if (S.view === "shop") renderShop(); else renderEvent();
+  else if (S.view === "shop") renderShop(); else if (S.view === "event") renderEvent(); else renderArea();
   const locs = [...new Set(boxList().map(b => b.location).filter(Boolean))];
   $("#locList").innerHTML = locs.map(l => `<option>${esc(l)}</option>`).join("");
 }
@@ -594,7 +613,8 @@ function go(view, id) {
   S.view = view;
   if (view === "box") S.boxId = id || null;
   if (view === "event") S.eventId = id || null;
-  try { localStorage.setItem("storit-tab", (view === "shop" || view === "event") ? "shop" : "storage"); } catch {}
+  if (view === "area") { S.listId = id || null; const l = SH.lists.get(S.listId); if (l) S.eventId = l.eventId; }
+  try { localStorage.setItem("storit-tab", (view === "shop" || view === "event" || view === "area") ? "shop" : "storage"); } catch {}
   render(); window.scrollTo(0, 0);
 }
 
@@ -784,12 +804,17 @@ async function importBackup(e) {
 // ================================================================
 //  SHOPPING LISTS: events → lists (areas) → items with link, price, qty
 // ================================================================
-const LIST_SUGGESTIONS = ["Sanctuary", "Foyer", "Hallways", "Activity Hall", "Kitchen", "Classrooms", "Outdoors", "Stage"];
+const AREAS = ["Sanctuary", "Foyer", "Hallways", "Activity Hall"];   // every event gets exactly these four lists
 const money = n => (Number(n) || 0).toLocaleString("en-US", { style: "currency", currency: "USD" });
 const parsePrice = v => { const n = parseFloat(String(v || "").replace(/[^0-9.]/g, "")); return isFinite(n) ? Math.round(n * 100) / 100 : 0; };
 const lineTotal = it => (Number(it.price) || 0) * (Number(it.qty) || 0);
 const eventList = () => [...SH.events.values()].sort((a, b) => (a.date || "9999").localeCompare(b.date || "9999") || (a.createdAt || 0) - (b.createdAt || 0));
-const listsOf = evId => [...SH.lists.values()].filter(l => l.eventId === evId).sort((a, b) => (a.order ?? a.createdAt ?? 0) - (b.order ?? b.createdAt ?? 0));
+const areaRank = n => { const i = AREAS.indexOf(n); return i < 0 ? 99 : i; };
+const listsOf = evId => [...SH.lists.values()].filter(l => l.eventId === evId).sort((a, b) => areaRank(a.name) - areaRank(b.name) || (a.createdAt || 0) - (b.createdAt || 0));
+function ensureAreas(evId) {            // older events: add any of the four that are missing
+  const have = new Set(listsOf(evId).map(l => l.name));
+  AREAS.forEach((name, k) => { if (!have.has(name)) sput("lists", uid(), { eventId: evId, name, order: k, createdAt: Date.now() + k, ...stamp() }); });
+}
 const sitemsOf = listId => [...SH.items.values()].filter(i => i.listId === listId).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
 const sitemsOfEvent = evId => [...SH.items.values()].filter(i => i.eventId === evId);
 function sums(items) {
@@ -845,7 +870,7 @@ function renderShop() {
       </div>
     </button>`;
   }).join("")}</div>`
-  : `<div class="empty"><strong>No shopping lists yet.</strong>Plan what to buy for an event. For example VBS 2027, with a list for the Sanctuary, Foyer, Hallways and Activity Hall.<button class="btn kraft" data-newevent>+ New event</button></div>`;
+  : `<div class="empty"><strong>No shopping lists yet.</strong>Plan what to buy for an event, like VBS 2027. Every event gets a list for the Sanctuary, Foyer, Hallways and Activity Hall.<button class="btn kraft" data-newevent>+ New event</button></div>`;
 }
 
 function captureShopForms() {
@@ -868,10 +893,10 @@ function restoreShopForms(st) {
 function renderEvent() {
   const ev = SH.events.get(S.eventId);
   if (!ev) { S.view = "shop"; render(); return; }
-  const st = captureShopForms();
+  if (!S._ensured) S._ensured = new Set();
+  if (S.ready && !S._ensured.has(ev.id)) { S._ensured.add(ev.id); ensureAreas(ev.id); }
   const lists = listsOf(ev.id), all = sitemsOfEvent(ev.id), s = sums(all);
   const pct = s.total ? Math.round(s.bought / s.total * 100) : 0;
-  if (S.listFilter && !lists.some(l => l.id === S.listFilter)) S.listFilter = null;
   $("#eventHead").innerHTML = `
     <div>
       <div class="code">${ev.date ? esc(fmtDate(ev.date)) : "No date set"}</div>
@@ -880,26 +905,35 @@ function renderEvent() {
     </div>
     <div class="row"><button class="btn" data-copyev>Copy all lists</button><button class="btn" data-editev>Edit event</button></div>`;
   $("#eventSum").innerHTML = `
-    <div class="sum"><span>Total</span><b class="money">${money(s.total)}</b></div>
+    <div class="sum"><span>Event total</span><b class="money">${money(s.total)}</b></div>
     <div class="sum ok"><span>Bought</span><b class="money">${money(s.bought)}</b></div>
     <div class="sum"><span>Still to buy</span><b class="money">${money(s.left)}</b></div>
     <div class="sumbar"><div class="progress"><i style="width:${pct}%"></i></div><span class="muted">${s.nb} of ${s.n} items bought</span></div>`;
-  $("#listChips").innerHTML = lists.length ? [`<button class="chip" data-lfilter="" aria-pressed="${!S.listFilter}">All lists<span class="n">${lists.length}</span></button>`]
-    .concat(lists.map(l => `<button class="chip" data-lfilter="${esc(l.id)}" aria-pressed="${S.listFilter === l.id}">${esc(l.name)}<span class="n">${money(sums(sitemsOf(l.id)).total)}</span></button>`)).join("")
-    + `<button class="chip add" data-addlist>+ Add list</button>` : "";
-  const shown = S.listFilter ? lists.filter(l => l.id === S.listFilter) : lists;
-  $("#eventLists").innerHTML = lists.length ? shown.map(l => listCard(l)).join("")
-    : `<div class="empty"><strong>Add the first list.</strong>Make one list for each area or team, like Sanctuary or Foyer.<button class="btn kraft" data-addlist>+ Add list</button></div>`;
-  restoreShopForms(st);
+  $("#areaList").innerHTML = lists.map(l => {
+    const ls = sums(sitemsOf(l.id));
+    return `<button class="arow" data-openlist="${esc(l.id)}">
+      <span class="aname">${esc(l.name)}</span>
+      <span class="ameta">${ls.n ? `${ls.n} ${ls.n === 1 ? "item" : "items"} · ${ls.nb} bought` : "Nothing added yet"}</span>
+      <span class="atotal money">${money(ls.total)}</span>
+      <span class="chev" aria-hidden="true">›</span>
+    </button>`;
+  }).join("") || `<div class="muted" style="padding:14px">Setting up the lists…</div>`;
 }
 
-function listCard(l) {
+function renderArea() {
+  const l = SH.lists.get(S.listId), ev = l && SH.events.get(l.eventId);
+  if (!l || !ev) { S.view = ev ? "event" : "shop"; render(); return; }
+  const st = captureShopForms();
   const its = sitemsOf(l.id), s = sums(its), id = l.id;
-  return `<section class="card listcard">
-    <div class="hd">
-      <div><h3 class="lname">${esc(l.name)}</h3><span class="muted">${s.n ? `${s.nb} of ${s.n} bought` : "No items yet"}</span></div>
-      <div class="row"><span class="money big">${money(s.total)}</span><button class="btn sm ghost" data-copylist="${esc(id)}">Copy</button><button class="btn sm ghost" data-editlist="${esc(id)}">Edit</button></div>
+  $("#areaBack").textContent = "← " + (ev.name || "Event");
+  $("#areaHead").innerHTML = `
+    <div>
+      <div class="code">${esc(ev.name || "Event")}</div>
+      <h2 style="font-size:28px;margin-top:8px">${esc(l.name)}</h2>
+      <span class="muted">${s.n ? `${s.nb} of ${s.n} bought · ${money(s.left)} still to buy` : "No items yet. Add what this area needs below."}</span>
     </div>
+    <div class="areatotal"><span>${esc(l.name)} total</span><b class="money">${money(s.total)}</b></div>`;
+  $("#areaBody").innerHTML = `<section class="card listcard">
     <form class="shopadd" data-addform="${esc(id)}" autocomplete="off">
       <input id="sa-name-${esc(id)}" class="nm" placeholder="What to buy, ex: balloons, blue" aria-label="Item">
       <input id="sa-link-${esc(id)}" class="lk" inputmode="url" placeholder="Paste link, ex: https://www.amazon.com/…" aria-label="Link">
@@ -907,9 +941,11 @@ function listCard(l) {
       <input id="sa-qty-${esc(id)}" class="qt" type="number" min="1" value="1" aria-label="Quantity">
       <button class="btn primary" type="submit">Add</button>
     </form>
-    ${its.length ? `<div class="slist">${its.map(sitemRow).join("")}</div>` : ""}
-    ${its.length ? `<div class="subtotal"><span>${esc(l.name)} total</span><b class="money">${money(s.total)}</b></div>` : ""}
+    ${its.length ? `<div class="slist">${its.map(sitemRow).join("")}</div>
+    <div class="subtotal"><span>${esc(l.name)} total</span><b class="money">${money(s.total)}</b></div>
+    <div class="row" style="justify-content:flex-end"><button class="btn sm" data-copylist="${esc(id)}">Copy this list</button></div>` : ""}
   </section>`;
+  restoreShopForms(st);
 }
 
 function sitemRow(it) {
@@ -931,17 +967,13 @@ function eventSheet(ev) {
     <h2>${isNew ? "New event" : "Edit event"}</h2>
     <div class="field"><label for="evName">Event name</label><input id="evName" value="${esc(ev.name)}" placeholder="ex: VBS 2027" required></div>
     <div class="field"><label for="evDate">Date (optional)</label><input id="evDate" type="date" value="${esc(ev.date)}"></div>
-    ${isNew ? `<div class="field"><label>Lists to start with</label>
-      <div class="chips" id="evPicks">${LIST_SUGGESTIONS.map((n, i) => `<button type="button" class="chip" data-pick aria-pressed="${i < 4}">${esc(n)}</button>`).join("")}</div>
-      <input id="evMore" placeholder="Other lists, ex: Nursery, Welcome table">
-      <span class="hint">Tap to choose. Separate extra lists with commas. You can add more later.</span></div>` : ""}
+    ${isNew ? `<p class="hint" style="margin:0">The event starts with four lists: ${AREAS.join(", ")}. Each has its own total.</p>` : ""}
     <div class="field"><label for="evNotes">Notes (optional)</label><textarea id="evNotes" rows="2" placeholder="ex: budget $1,500, receipts to the church office">${esc(ev.notes)}</textarea></div>
     <div class="foot">
       <div>${isNew ? "" : `<button type="button" class="btn danger" id="delEv">Delete event</button>`}</div>
       <div class="row"><button type="button" class="btn" data-close>Cancel</button><button class="btn primary">${isNew ? "Create event" : "Save"}</button></div>
     </div>
   </form>`, o => {
-    o.querySelectorAll("[data-pick]").forEach(c => c.onclick = () => c.setAttribute("aria-pressed", c.getAttribute("aria-pressed") !== "true"));
     o.querySelector("#evForm").addEventListener("submit", async e => {
       e.preventDefault();
       const id = isNew ? uid() : ev.id;
@@ -949,11 +981,9 @@ function eventSheet(ev) {
         name: $("#evName").value.trim(), date: $("#evDate").value, notes: $("#evNotes").value.trim(), ...stamp() };
       sput("events", id, data);
       if (isNew) {
-        const picks = [...o.querySelectorAll('[data-pick][aria-pressed="true"]')].map(c => c.textContent.trim())
-          .concat($("#evMore").value.split(",").map(x => x.trim()).filter(Boolean));
-        let k = 0;
-        for (const name of [...new Set(picks)]) sput("lists", uid(), { eventId: id, name, order: k++, createdAt: Date.now() + k, ...stamp() });
-        closeSheet(); S.listFilter = null; go("event", id);
+        (S._ensured || (S._ensured = new Set())).add(id);
+        AREAS.forEach((name, k) => sput("lists", uid(), { eventId: id, name, order: k, createdAt: Date.now() + k, ...stamp() }));
+        closeSheet(); go("event", id);
       } else { closeSheet(); toast("Saved"); }
     });
     const d = o.querySelector("#delEv");
@@ -962,34 +992,6 @@ function eventSheet(ev) {
       for (const it of sitemsOfEvent(ev.id)) await sdel("shopitems", it.id);
       for (const l of listsOf(ev.id)) await sdel("lists", l.id);
       await sdel("events", ev.id); toast("Event deleted");
-    }));
-  });
-}
-
-function listSheet(l) {
-  const isNew = !l; l = l || {};
-  const ev = SH.events.get(isNew ? S.eventId : l.eventId);
-  openSheet(`<form class="sheet" id="lsForm" autocomplete="off">
-    <h2>${isNew ? "Add a list" : "Edit list"}</h2>
-    <div class="field"><label for="lsName">List name</label><input id="lsName" list="lsSug" value="${esc(l.name)}" placeholder="ex: Activity Hall" required>
-      <datalist id="lsSug">${LIST_SUGGESTIONS.map(n => `<option>${esc(n)}</option>`).join("")}</datalist></div>
-    <div class="foot">
-      <div>${isNew ? "" : `<button type="button" class="btn danger" id="delLs">Delete list</button>`}</div>
-      <div class="row"><button type="button" class="btn" data-close>Cancel</button><button class="btn primary">${isNew ? "Add list" : "Save"}</button></div>
-    </div>
-  </form>`, o => {
-    o.querySelector("#lsForm").addEventListener("submit", e => {
-      e.preventDefault();
-      const name = $("#lsName").value.trim(); if (!name) return;
-      if (isNew) { const id = uid(); sput("lists", id, { eventId: ev.id, name, order: listsOf(ev.id).length, createdAt: Date.now(), ...stamp() }); if (S.listFilter) S.listFilter = id; }
-      else sput("lists", l.id, { ...strip(l), name, ...stamp() });
-      closeSheet();
-    });
-    const d = o.querySelector("#delLs");
-    d && d.addEventListener("click", () => armed(d, `Tap again to delete ${l.name} and its items`, async () => {
-      closeSheet();
-      for (const it of sitemsOf(l.id)) await sdel("shopitems", it.id);
-      await sdel("lists", l.id); toast("List deleted");
     }));
   });
 }
@@ -1041,12 +1043,11 @@ async function copyText(text) {
 
 // ---------- events (clicks / forms) ----------
 function shopClick(t) {
-  const oe = t.closest("[data-openev]"); if (oe) { S.listFilter = null; go("event", oe.dataset.openev); return true; }
+  const oe = t.closest("[data-openev]"); if (oe) { go("event", oe.dataset.openev); return true; }
+  const ol = t.closest("[data-openlist]"); if (ol) { go("area", ol.dataset.openlist); return true; }
   if (t.closest("[data-newevent]")) { eventSheet(null); return true; }
   if (t.closest("[data-editev]")) { eventSheet(SH.events.get(S.eventId)); return true; }
-  if (t.closest("[data-addlist]")) { listSheet(null); return true; }
-  const el = t.closest("[data-editlist]"); if (el) { listSheet(SH.lists.get(el.dataset.editlist)); return true; }
-  const lf = t.closest("[data-lfilter]"); if (lf) { S.listFilter = lf.dataset.lfilter || null; renderEvent(); return true; }
+  if (t.closest("#areaBack")) { const l = SH.lists.get(S.listId); go("event", l ? l.eventId : S.eventId); return true; }
   const cl = t.closest("[data-copylist]"); if (cl) { const l = SH.lists.get(cl.dataset.copylist); if (l) copyText(listText(l)); return true; }
   if (t.closest("[data-copyev]")) {
     const ev = SH.events.get(S.eventId), s = sums(sitemsOfEvent(ev.id));
