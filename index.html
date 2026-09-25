@@ -276,7 +276,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { getAuth, signInAnonymously, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
   initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
-  collection, doc, getDoc, setDoc, deleteDoc, onSnapshot, writeBatch,
+  collection, doc, getDoc, setDoc, deleteDoc, onSnapshot, writeBatch, runTransaction,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -533,6 +533,19 @@ function armed(btn, label, fn) {
   setTimeout(() => { if (btn.isConnected) { btn.classList.remove("armed"); btn.textContent = old; } }, 3500);
 }
 
+// Each box number can belong to only one box. "boxnums/<number>" holds the claim; a transaction
+// makes sure two phones creating the same number at the same moment can't both win.
+async function saveBoxWithNumber(id, data, oldNumber) {
+  const numRef = doc(db, "boxnums", String(data.number));
+  await runTransaction(db, async tx => {
+    const n = await tx.get(numRef);
+    if (n.exists() && n.data().boxId !== id) { const e = new Error("taken"); e.code = "number-taken"; throw e; }
+    tx.set(numRef, { boxId: id });
+    if (oldNumber != null && oldNumber !== data.number) tx.delete(doc(db, "boxnums", String(oldNumber)));
+    tx.set(doc(db, "boxes", id), data);
+  });
+}
+
 function boxSheet(b) {
   const isNew = !b; b = b || { number: nextNumber() };
   openSheet(`<form class="sheet" id="boxForm" autocomplete="off">
@@ -549,7 +562,7 @@ function boxSheet(b) {
       <div class="row"><button type="button" class="btn" data-close>Cancel</button><button class="btn primary">${isNew ? "Create box" : "Save"}</button></div>
     </div>
   </form>`, o => {
-    o.querySelector("#boxForm").addEventListener("submit", e => {
+    o.querySelector("#boxForm").addEventListener("submit", async e => {
       e.preventDefault();
       const id = isNew ? uid() : b.id;
       const data = { ...(isNew ? { photos: [], createdAt: Date.now(), createdBy: S.me } : strip(b)),
@@ -558,8 +571,22 @@ function boxSheet(b) {
         updatedAt: Date.now(), updatedBy: S.me };
       const clash = boxList().find(x => x.number === data.number && x.id !== id);
       if (clash) { toast(`${codeOf(clash)} already exists. Pick another number.`); return; }
-      put("boxes", id, data); closeSheet();
-      if (isNew) go("box", id); else toast("Saved");
+      const oldNumber = isNew ? null : b.number;
+      if (!isNew && oldNumber === data.number) {          // number unchanged: normal save (works offline)
+        put("boxes", id, data); closeSheet(); toast("Saved"); return;
+      }
+      const btn = e.target.querySelector("button.primary"); btn.disabled = true;
+      try {
+        await saveBoxWithNumber(id, data, oldNumber);
+        S.boxes.set(id, { ...data, id }); closeSheet();
+        if (isNew) go("box", id); else toast("Saved");
+      } catch (err) {
+        btn.disabled = false;
+        const code = codeOf({ number: data.number });
+        if (err && err.code === "number-taken") toast(`${code} was just created by someone else. Pick another number.`);
+        else if (String(err && err.code).includes("unavailable") || !navigator.onLine) toast("You need an internet connection to create or renumber a box.");
+        else toast(errMsg(err));
+      }
     });
     const d = o.querySelector("#delBox");
     d && d.addEventListener("click", () => armed(d, "Tap again to delete box and its items", async () => {
@@ -568,6 +595,7 @@ function boxSheet(b) {
       for (const it of its) await del("items", it.id);
       for (const p of b.photos || []) deleteDoc(doc(db, "photos", p)).catch(() => {});
       await del("boxes", b.id);
+      deleteDoc(doc(db, "boxnums", String(b.number))).catch(() => {});
       toast("Box deleted");
     }));
   });
@@ -655,7 +683,7 @@ async function importBackup(e) {
   toast("Restoring…");
   try {
     const writes = [];
-    for (const b of data.boxes) writes.push(["boxes", b.id, strip(b)]);
+    for (const b of data.boxes) { writes.push(["boxes", b.id, strip(b)]); writes.push(["boxnums", String(b.number), { boxId: b.id }]); }
     for (const i of data.items) writes.push(["items", i.id, strip(i)]);
     for (const [id, p] of Object.entries(data.photos || {})) writes.push(["photos", id, p]);
     // photos are large: commit in small batches
