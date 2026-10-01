@@ -115,7 +115,11 @@ header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:1
 @media (max-width:560px){.item{grid-template-columns:1fr}.item .actions{justify-content:flex-start}}
 
 /* box view */
-.back{align-self:flex-start;margin-top:20px}
+.btn.back{align-self:flex-start;position:sticky;top:calc(env(safe-area-inset-top,0px) + 10px);z-index:5;margin-top:16px;
+  background:var(--navy);color:var(--surface);border:0;border-radius:999px;padding:10px 20px 10px 12px;min-height:46px;font-size:16px;font-weight:700;gap:6px;
+  box-shadow:0 2px 10px rgba(31,58,104,.28)}
+.btn.back:hover{filter:brightness(1.1);border:0}
+.btn.back:active{transform:translateY(1px)}
 .boxhead{display:flex;gap:16px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap}
 .boxhead .bigcode{font:800 56px/0.9 var(--display);color:var(--kraft);letter-spacing:.03em}
 .boxhead h2{font-size:24px;font-weight:700;margin-top:6px}
@@ -305,7 +309,7 @@ code{font-family:var(--mono);font-size:13px;background:var(--surface-2);padding:
 
   <!-- SHOPPING: one event -->
   <div id="eventView" hidden style="display:flex;flex-direction:column;gap:18px">
-    <button class="btn ghost back" id="evBack">← All events</button>
+    <button class="btn back" id="evBack"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>All events</span></button>
     <div class="boxhead" id="eventHead"></div>
     <div class="sumgrid" id="eventSum"></div>
     <div class="arealist" id="areaList"></div>
@@ -313,14 +317,14 @@ code{font-family:var(--mono);font-size:13px;background:var(--surface-2);padding:
 
   <!-- SHOPPING: one area's list -->
   <div id="areaView" hidden style="display:flex;flex-direction:column;gap:18px">
-    <button class="btn ghost back" id="areaBack">← Event</button>
+    <button class="btn back" id="areaBack"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Event</span></button>
     <div class="boxhead" id="areaHead"></div>
     <div id="areaBody"></div>
   </div>
 
   <!-- ACTIVITY LOG -->
   <div id="actView" hidden style="display:flex;flex-direction:column;gap:16px">
-    <button class="btn ghost back" id="actBack">← Back</button>
+    <button class="btn back" id="actBack"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Back</span></button>
     <div><h2 style="font-size:24px">Activity log</h2><span class="muted">The latest 500 changes, newest first. Entries can't be edited or deleted from the app.</span></div>
     <div class="actfilters">
       <div class="chips" id="actChips"></div>
@@ -331,7 +335,7 @@ code{font-family:var(--mono);font-size:13px;background:var(--surface-2);padding:
 
   <!-- BOX -->
   <div id="boxView" hidden style="display:flex;flex-direction:column;gap:18px">
-    <button class="btn ghost back" id="backBtn">← All boxes</button>
+    <button class="btn back" id="backBtn"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>All boxes</span></button>
     <div class="boxhead" id="boxHead"></div>
 
     <section class="card">
@@ -1014,7 +1018,7 @@ function renderArea() {
   if (!l || !ev) { S.view = ev ? "event" : "shop"; render(); return; }
   const st = captureShopForms();
   const its = sitemsOf(l.id), s = sums(its), id = l.id;
-  $("#areaBack").textContent = "← " + (ev.name || "Event");
+  $("#areaBack span").textContent = (ev.name || "Event");
   $("#areaHead").innerHTML = `
     <div>
       <div class="code">${esc(ev.name || "Event")}</div>
